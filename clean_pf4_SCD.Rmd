@@ -1,0 +1,306 @@
+---
+title: "SCD exam"
+author: "Manon Grandjean"
+date: "4/18/2021"
+output: html_document
+---
+
+```{r Loading NetLogo plot csv export file - figure 2}
+library(tidyverse)
+d <- read.csv("NL plots/Happiness plot H1.csv", header = T, skip = 19) # It's supposed to have 16 columns
+# nice! I got it to read in all the columns, but only from row 20 in the original csv :) (this is where the data set starts sorta)
+# Now I just need to figure out how I 'lengthen' the data frame, because there is kind of 4 parallel sets, one for each breed/color.
+```
+
+# Legend: #
+Each breed has 4 columns in the data frame associated to it, only the 3 first of which are relevant.
+- x, which is the position on the x axis, also the tick count / 'day'. (these are all 0,1,2,3 etc)
+- y, which is the value, the population of that given breed and the given tick.
+- color, which is the number color assigned in NetLogo. These can be manually changed to chr values red, pink, etc.
+- pen.down. just means that the graph is drawing. Not relevant for me. They are all true all of the time.
+
+```{r Split into 4 data frames - figure 2}
+dRed <- cbind(d$x, d$y, d$color)
+dRed <- as.data.frame(dRed)
+colnames(dRed) <- c("x", "y", "color")
+dRed$color <- "red"
+
+
+dPink <- cbind(d$x.1, d$y.1, d$color.1)
+dPink <- as.data.frame(dPink)
+colnames(dPink) <- c("x", "y", "color")
+dPink$color <- "pink"
+
+
+dDarkblue <- cbind(d$x.2, d$y.2, d$color.2)
+dDarkblue <- as.data.frame(dDarkblue)
+colnames(dDarkblue) <- c("x", "y", "color")
+dDarkblue$color <- "darkblue"
+
+
+dLightblue <- cbind(d$x.3, d$y.3, d$color.3)
+dLightblue <- as.data.frame(dLightblue)
+colnames(dLightblue) <- c("x", "y", "color")
+dLightblue$color <- "lightblue"
+
+# oh wait, that's not the structure i wanted it in for graphing...
+# oh wait maybe i do want the like this and rbind them...
+df2 <- rbind(dRed, dPink, dDarkblue, dLightblue)
+```
+
+
+```{r Re-plotting the original NL plot in ggplot - figure 2}
+ggplot(df2, aes(x = x, y = y, color = color))+
+  geom_line()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+#ggsave("hypothesis1plot.png")
+```
+What a pretty plot :) Now what can I use it for? What good is it that I now have the ABM data in R?
+What things can I do with this data? How can I use it to its fullest potential?
+
+```{r 4.1 figure 3}
+#4.1 - figure 3
+d <- read.csv("NL plots/meetingandnoreproduction13052021 Happiness plot.csv", header = T, skip = 19)
+
+dRed <- cbind(d$x, d$y, d$color)
+dRed <- as.data.frame(dRed)
+colnames(dRed) <- c("x", "y", "color")
+dRed$color <- "red"
+
+
+dPink <- cbind(d$x.1, d$y.1, d$color.1)
+dPink <- as.data.frame(dPink)
+colnames(dPink) <- c("x", "y", "color")
+dPink$color <- "pink"
+
+
+dDarkblue <- cbind(d$x.2, d$y.2, d$color.2)
+dDarkblue <- as.data.frame(dDarkblue)
+colnames(dDarkblue) <- c("x", "y", "color")
+dDarkblue$color <- "darkblue"
+
+
+dLightblue <- cbind(d$x.3, d$y.3, d$color.3)
+dLightblue <- as.data.frame(dLightblue)
+colnames(dLightblue) <- c("x", "y", "color")
+dLightblue$color <- "lightblue"
+
+df2 <- rbind(dRed, dPink, dDarkblue, dLightblue)
+
+ggplot(df2, aes(x = x, y = y, color = color))+
+  geom_line()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+```
+
+
+## Aggregating multiple ABM runs
+
+```{r Start by trying to aggrigate the different breeds in the first data set}
+# I will start by aggregating these as 1) a proof on concept, 2) to see which data structure is best to do it with.
+
+#trying with df2
+#https://www.youtube.com/watch?v=zmiC7X9fUmo
+aggregate(y ~ color, df2, FUN = "max")
+
+```
+```{r}
+((101.5-71.0) / 71.0) * 100
+((102.8-77.4) / 77.4) * 100
+```
+
+
+
+### Processing BehaviorSpace files ###
+
+```{r loading bs data expriment 1}
+bs <- read.csv("NL BS outputs/meetingandnoreproduction13052021 hypothesis1-table2.csv", header = T, skip = 6)
+```
+
+```{r some descriptive stats and calculations experiment 1}
+bs_finaltick <- filter(bs, ticks == 1999)
+
+mean(bs_finaltick$mean..happiness..of.t_reds)
+sd(bs_finaltick$mean..happiness..of.t_reds)
+
+mean(bs_finaltick$mean..happiness..of.t_pinks)
+sd(bs_finaltick$mean..happiness..of.t_pinks)
+
+mean(bs_finaltick$mean..happiness..of.t_darkblues)
+sd(bs_finaltick$mean..happiness..of.t_darkblues)
+
+mean(bs_finaltick$mean..happiness..of.t_lightblues)
+sd(bs_finaltick$mean..happiness..of.t_lightblues)
+
+#To calculate the percentage increase:
+# First: work out the difference (increase) between the two numbers you are comparing. Then: divide the increase by the 
+# original number and multiply the answer by 100. % increase = Increase ÷ Original Number × 100.
+blue_increase <- mean(bs_finaltick$mean..happiness..of.t_lightblues) - mean(bs_finaltick$mean..happiness..of.t_darkblues)
+perc_increace <- (blue_increase / mean(bs_finaltick$mean..happiness..of.t_darkblues)) * 100
+
+red_increase <- mean(bs_finaltick$mean..happiness..of.t_pinks) - mean(bs_finaltick$mean..happiness..of.t_reds)
+perc_increace2 <- (red_increase / mean(bs_finaltick$mean..happiness..of.t_reds)) * 100
+```
+
+
+## behavior space experiment 2 ##
+
+```{r load and transform data}
+bs2 <- read.csv("NL BS outputs/majorityminority_ex2-table.csv", header = T, skip = 6)
+
+# we want the same number of reds and pinks
+rp1 <- filter(bs2, n_red == 1 & n_pink ==1)
+rp2 <- filter(bs2, n_red == 2 & n_pink ==2)
+rp3 <- filter(bs2, n_red == 3 & n_pink ==3)
+rp4 <- filter(bs2, n_red == 4 & n_pink ==4)
+rp5 <- filter(bs2, n_red == 5 & n_pink ==5)
+rp6 <- filter(bs2, n_red == 6 & n_pink ==6)
+rp7 <- filter(bs2, n_red == 7 & n_pink ==7)
+rp8 <- filter(bs2, n_red == 8 & n_pink ==8)
+rp9 <- filter(bs2, n_red == 9 & n_pink ==9)
+
+
+rp1$mean..happiness..of.t_reds
+
+# elongate the data
+long_bs <- function(d){
+  
+  dRed <- cbind(d$X.run.number., d$ticks, d$mean..happiness..of.t_reds, d$agreement_reward, d$tolerance_reward, d$intolerance_punishment)
+  dRed <- as.data.frame(dRed)
+  colnames(dRed) <- c("run.number", "ticks", "mean.happiness", "agreement_reward", "tolerance_reward", "intolerance_punishment")
+  dRed$color <- "red"
+  
+  dPink <- cbind(d$X.run.number., d$ticks, d$mean..happiness..of.t_pinks, d$agreement_reward, d$tolerance_reward, d$intolerance_punishment)
+  dPink <- as.data.frame(dPink)
+  colnames(dPink) <- c("run.number", "ticks", "mean.happiness", "agreement_reward", "tolerance_reward", "intolerance_punishment")
+  dPink$color <- "pink"
+  
+  dDarkblue <- cbind(d$X.run.number., d$ticks, d$mean..happiness..of.t_darkblues, d$agreement_reward, d$tolerance_reward, d$intolerance_punishment)
+  dDarkblue <- as.data.frame(dDarkblue)
+  colnames(dDarkblue) <- c("run.number", "ticks", "mean.happiness", "agreement_reward", "tolerance_reward", "intolerance_punishment")
+  dDarkblue$color <- "darkblue"
+  
+  dLightblue <- cbind(d$X.run.number., d$ticks, d$mean..happiness..of.t_lightblues, d$agreement_reward, d$tolerance_reward, d$intolerance_punishment)
+  dLightblue <- as.data.frame(dLightblue)
+  colnames(dLightblue) <- c("run.number", "ticks", "mean.happiness", "agreement_reward", "tolerance_reward", "intolerance_punishment")
+  dLightblue$color <- "lightblue"
+  
+  dx <- rbind(dRed, dPink, dDarkblue, dLightblue)
+  
+  return(dx)
+}
+
+rp1long <- long_bs(rp1)
+rp2long <- long_bs(rp2)
+rp3long <- long_bs(rp3)
+rp4long <- long_bs(rp4)
+rp5long <- long_bs(rp5)
+rp6long <- long_bs(rp6)
+rp7long <- long_bs(rp7)
+rp8long <- long_bs(rp8)
+rp9long <- long_bs(rp9)
+```
+
+```{r test if it works! yay1!}
+
+ggplot(rp1long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+aggregate(mean.happiness ~ color, rp1long, FUN = "max")
+```
+
+```{r big beautiful plot! for experiment 2}
+p1 <- ggplot(rp1long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p2 <- ggplot(rp2long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p3 <- ggplot(rp3long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p4 <- ggplot(rp4long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p5 <- ggplot(rp5long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p6 <- ggplot(rp6long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p7 <- ggplot(rp7long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p8 <- ggplot(rp8long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+p9 <- ggplot(rp9long, aes(x = ticks, y = mean.happiness, color = color))+
+  geom_smooth()+
+  scale_color_manual(values = c("blue", "deepskyblue", "hotpink", "firebrick3"))+
+  #ggtitle("")+
+  ylab("Mean happiness")+
+  xlab("Time")+
+  theme_light()
+
+ggpubr::ggarrange(p1, p2, p3, p4, p5, p6, p7, p8, p9, 
+                  labels = c("1", "2", "3", "4", "5", "6", "7", "8", "9"),
+                  ncol = 3, nrow = 3,
+                  common.legend = TRUE)
+
+ggsave("minorityplot9.png", width = 10)
+```
+
+
